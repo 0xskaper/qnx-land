@@ -49,15 +49,50 @@
 //
 // 1.3
 //
-int main(int argc, char **argv, char **envp) {
-  pid_t pid;
-  pid = fork();
+// int main(int argc, char **argv, char **envp) {
+//   pid_t pid;
+//   pid = fork();
+//
+//   if (pid > 0) {
+//     printf("I AM CHILD WITH ID: %d\n", getpid());
+//   } else {
+//     printf("I AM PARENT WITH ID: %d\n", getpid());
+//   }
+//
+//   return 0;
+// }
+//
+// 1.4
+//
 
-  if (pid > 0) {
-    printf("I AM CHILD WITH ID: %d\n", getpid());
-  } else {
-    printf("I AM PARENT WITH ID: %d\n", getpid());
+#define MAX_LEN 16
+
+void *worker_threads(void *arg) {
+  while (1) {
+    char threadName[MAX_LEN];
+    pthread_setname_np(pthread_self(), "WORKER");
+    pthread_getname_np(pthread_self(), threadName, MAX_LEN);
+
+    printf("%s %s - THREAD WITH ID - %d\n", threadName, (char *)arg,
+           pthread_self());
+    sleep(1);
   }
 
+  return NULL;
+}
+int main(int argc, char **argv, char **envp) {
+  pthread_t threadOne;
+  pthread_attr_t attr;
+  char threadName[MAX_LEN];
+
+  pthread_setname_np(pthread_self(), "MAIN");
+  pthread_getname_np(pthread_self(), threadName, MAX_LEN);
+  printf("%s - THREAD WITH ID - %d\n", threadName, pthread_self());
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+  pthread_create(&threadOne, NULL, worker_threads, "ONE");
+
+  while (1) {
+    sleep(1);
+  }
   return 0;
 }
