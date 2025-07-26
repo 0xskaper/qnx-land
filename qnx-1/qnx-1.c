@@ -29,19 +29,35 @@
 //
 // 1.2
 //
-void *thread_do_work(void *arg) {
-  while (1) { // Finite loop
-    printf("THREAD - %s WORKING WITH ID: %lu\n", (char *)arg, pthread_self());
-    sleep(1);
-  }
-  return NULL;
-}
-
+// void *thread_do_work(void *arg) {
+//   while (1) { // Finite loop
+//     printf("THREAD - %s WORKING WITH ID: %lu\n", (char *)arg,
+//     pthread_self()); sleep(1);
+//   }
+//   return NULL;
+// }
+//
+// int main(int argc, char **argv, char **envp) {
+//   pthread_t threadOne;
+//
+//   pthread_create(&threadOne, NULL, thread_do_work, "ONE"); // Default
+//   joinable pthread_join(threadOne, NULL);                           // Now
+//   this works
+//
+//   return 0;
+// }
+//
+// 1.3
+//
 int main(int argc, char **argv, char **envp) {
-  pthread_t threadOne;
+  pid_t pid;
+  pid = fork();
 
-  pthread_create(&threadOne, NULL, thread_do_work, "ONE"); // Default joinable
-  pthread_join(threadOne, NULL);                           // Now this works
+  if (pid > 0) {
+    printf("I AM CHILD WITH ID: %d\n", getpid());
+  } else {
+    printf("I AM PARENT WITH ID: %d\n", getpid());
+  }
 
   return 0;
 }
