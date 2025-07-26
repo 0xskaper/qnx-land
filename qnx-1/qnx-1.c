@@ -29,19 +29,19 @@
 //
 // 1.2
 //
-void *thread_do_work(void *argc) {
-  while (1) {
-    printf("THREAD - %s WORKING WITH ID: %ul", (char *)argc, pthread_self());
+void *thread_do_work(void *arg) {
+  while (1) { // Finite loop
+    printf("THREAD - %s WORKING WITH ID: %lu\n", (char *)arg, pthread_self());
+    sleep(1);
   }
+  return NULL;
 }
 
 int main(int argc, char **argv, char **envp) {
   pthread_t threadOne;
-  pthread_attr_t attr;
 
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-  pthread_create(&threadOne, &attr, thread_do_work, "ONE");
-  pthread_join(threadOne, NULL);
+  pthread_create(&threadOne, NULL, thread_do_work, "ONE"); // Default joinable
+  pthread_join(threadOne, NULL);                           // Now this works
 
   return 0;
 }
