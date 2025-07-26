@@ -65,34 +65,54 @@
 // 1.4
 //
 
-#define MAX_LEN 16
-
-void *worker_threads(void *arg) {
-  while (1) {
-    char threadName[MAX_LEN];
-    pthread_setname_np(pthread_self(), "WORKER");
-    pthread_getname_np(pthread_self(), threadName, MAX_LEN);
-
-    printf("%s %s - THREAD WITH ID - %d\n", threadName, (char *)arg,
-           pthread_self());
-    sleep(1);
-  }
-
-  return NULL;
-}
+// #define MAX_LEN 16
+//
+// void *worker_threads(void *arg) {
+//   while (1) {
+//     char threadName[MAX_LEN];
+//     pthread_setname_np(pthread_self(), "WORKER");
+//     pthread_getname_np(pthread_self(), threadName, MAX_LEN);
+//
+//     printf("%s %s - THREAD WITH ID - %d\n", threadName, (char *)arg,
+//            pthread_self());
+//     sleep(1);
+//   }
+//
+//   return NULL;
+// }
+// int main(int argc, char **argv, char **envp) {
+//   pthread_t threadOne;
+//   pthread_attr_t attr;
+//   char threadName[MAX_LEN];
+//
+//   pthread_setname_np(pthread_self(), "MAIN");
+//   pthread_getname_np(pthread_self(), threadName, MAX_LEN);
+//   printf("%s - THREAD WITH ID - %d\n", threadName, pthread_self());
+//   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+//   pthread_create(&threadOne, NULL, worker_threads, "ONE");
+//
+//   while (1) {
+//     sleep(1);
+//   }
+//   return 0;
+// }
+//
+// 1.5
+//
 int main(int argc, char **argv, char **envp) {
-  pthread_t threadOne;
-  pthread_attr_t attr;
-  char threadName[MAX_LEN];
+  pid_t pid;
+  int child_status;
 
-  pthread_setname_np(pthread_self(), "MAIN");
-  pthread_getname_np(pthread_self(), threadName, MAX_LEN);
-  printf("%s - THREAD WITH ID - %d\n", threadName, pthread_self());
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-  pthread_create(&threadOne, NULL, worker_threads, "ONE");
-
-  while (1) {
-    sleep(1);
+  pid = fork();
+  if (pid == -1) {
+    perror("FORK()\n");
+    exit(EXIT_FAILURE);
+  } else if (pid > 0) {
+    printf("I AM CHILD AND NOW I'LL EXEC\n");
+    execl("/proc/boot/ls", "ls", "-l", "-a", NULL);
+  } else {
+    printf("I AM PARENT AND I'LL WAIT\n");
+    sleep(5);
+    pid = wait(&child_status);
   }
-  return 0;
 }
