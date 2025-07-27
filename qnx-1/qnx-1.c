@@ -1,10 +1,10 @@
 #include <errno.h>
 #include <pthread.h>
+#include <sched.h>
 #include <spawn.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-
 // 1.1
 // int main(int argc, char **argv, char **envp) {
 //   pid_t pid;
@@ -119,68 +119,120 @@
 //
 // 1.6
 //
-#define NUM_THREADS 5
-
-long long factorial_results[NUM_THREADS];
-
-pthread_mutex_t result_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-typedef struct {
-  int thread_id;
-  int number;
-} thread_data_t;
-
-long long factorial(int n) {
-  if (n <= 1)
-    return 1;
-  long long result = 1;
-  for (int i = 2; i <= n; i++) {
-    result *= i;
+// #define NUM_THREADS 5
+//
+// long long factorial_results[NUM_THREADS];
+//
+// pthread_mutex_t result_mutex = PTHREAD_MUTEX_INITIALIZER;
+//
+// typedef struct {
+//   int thread_id;
+//   int number;
+// } thread_data_t;
+//
+// long long factorial(int n) {
+//   if (n <= 1)
+//     return 1;
+//   long long result = 1;
+//   for (int i = 2; i <= n; i++) {
+//     result *= i;
+//   }
+//
+//   return result;
+// }
+//
+// void *do_fact_thread(void *arg) {
+//   thread_data_t *data = (thread_data_t *)arg;
+//
+//   printf("Thread: %d -> WORKING ON -> %d\n", data->thread_id, data->number);
+//
+//   long long result = factorial(data->number);
+//
+//   pthread_mutex_lock(&result_mutex);
+//   factorial_results[data->thread_id] = result;
+//   printf("THREAD %d: %d! = %lld\n", data->thread_id, data->number, result);
+//   pthread_mutex_unlock(&result_mutex);
+//
+//   return NULL;
+// }
+//
+// int main(int argc, char **argv, char **envp) {
+//   pthread_t threads[NUM_THREADS];
+//   thread_data_t thread_data[NUM_THREADS];
+//
+//   for (int i = 0; i < NUM_THREADS; i++) {
+//     thread_data[i].thread_id = i;
+//     thread_data[i].number = i + 1;
+//
+//     if (pthread_create(&threads[i], NULL, do_fact_thread, &thread_data[i]) !=
+//         0) {
+//       perror("pthread_create_failed");
+//       exit(1);
+//     }
+//   }
+//
+//   for (int i = 0; i < NUM_THREADS; i++) {
+//     pthread_join(threads[i], NULL);
+//   }
+//
+//   printf("\nResult from shared Array\n");
+//   for (int i = 0; i < NUM_THREADS; i++) {
+//     printf("ARRAY %d: %d! = %lld\n", i, i + 1, factorial_results[i]);
+//   }
+//
+//   pthread_mutex_destroy(&result_mutex);
+//
+//   return 0;
+// }
+//
+// 1.7
+//
+void *worker_thread(void *arg) {
+  int policy, i;
+  struct sched_param param;
+  // pthread_getschedparam(pthread_self(), &policy, &param);
+  // printf("WORKER THREAD: %d || PRIORITY: %d || POLICY: %d\n", pthread_self(),
+  // param.sched_priority, policy);
+  i = 10;
+  while (i > 0) {
+    printf("THREAD - %s\n", (char *)arg);
+    // sleep(1);
+    i--;
   }
-
-  return result;
-}
-
-void *do_fact_thread(void *arg) {
-  thread_data_t *data = (thread_data_t *)arg;
-
-  printf("Thread: %d -> WORKING ON -> %d\n", data->thread_id, data->number);
-
-  long long result = factorial(data->number);
-
-  pthread_mutex_lock(&result_mutex);
-  factorial_results[data->thread_id] = result;
-  printf("THREAD %d: %d! = %lld\n", data->thread_id, data->number, result);
-  pthread_mutex_unlock(&result_mutex);
 
   return NULL;
 }
 
 int main(int argc, char **argv, char **envp) {
-  pthread_t threads[NUM_THREADS];
-  thread_data_t thread_data[NUM_THREADS];
+  pthread_t threadOne, threadTwo, threadThree;
+  pthread_attr_t attr;
+  int policy;
+  struct sched_param param;
 
-  for (int i = 0; i < NUM_THREADS; i++) {
-    thread_data[i].thread_id = i;
-    thread_data[i].number = i + 1;
+  pthread_attr_init(&attr);
 
-    if (pthread_create(&threads[i], NULL, do_fact_thread, &thread_data[i]) !=
-        0) {
-      perror("pthread_create_failed");
-      exit(1);
-    }
-  }
+  pthread_getschedparam(pthread_self(), &policy, &param);
+  printf("MAIN THREAD: %d || PRIORITY: %d || POLICY: %d\n", pthread_self(),
+         param.sched_priority, policy);
 
-  for (int i = 0; i < NUM_THREADS; i++) {
-    pthread_join(threads[i], NULL);
-  }
+  pthread_attr_setschedpolicy(&attr, SCHED_RR);
+  param.sched_priority = 50;
+  pthread_attr_setschedparam(&attr, &param);
+  pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+  pthread_create(&threadOne, &attr, worker_thread, "ONE (HIGH PRIORITY)");
+  pthread_join(threadOne, NULL);
 
-  printf("\nResult from shared Array\n");
-  for (int i = 0; i < NUM_THREADS; i++) {
-    printf("ARRAY %d: %d! = %lld\n", i, i + 1, factorial_results[i]);
-  }
+  param.sched_priority = 30;
+  pthread_attr_setschedparam(&attr, &param);
+  pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+  pthread_create(&threadTwo, &attr, worker_thread, "TWO (MEDIUM PRIORITY)");
+  pthread_join(threadTwo, NULL);
 
-  pthread_mutex_destroy(&result_mutex);
+  param.sched_priority = 20;
+  pthread_attr_setschedparam(&attr, &param);
+  pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+  pthread_create(&threadThree, &attr, worker_thread, "THREE (LOW PRIORITY)");
+  pthread_join(threadThree, NULL);
 
   return 0;
 }
