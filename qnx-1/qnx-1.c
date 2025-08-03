@@ -191,9 +191,10 @@ void *worker_thread(void *arg) {
   int policy, i;
   struct sched_param param;
   // pthread_getschedparam(pthread_self(), &policy, &param);
-  // printf("WORKER THREAD: %d || PRIORITY: %d || POLICY: %d\n", pthread_self(),
-  // param.sched_priority, policy);
-  i = 10;
+  // printf("WORKER THREAD: %d || PRIORITY: %d || POLICY: %d\n",
+  pthread_self(),
+      // param.sched_priority, policy);
+      i = 10;
   while (i > 0) {
     printf("THREAD - %s\n", (char *)arg);
     // sleep(1);
@@ -202,7 +203,7 @@ void *worker_thread(void *arg) {
 
   return NULL;
 }
-
+//
 int main(int argc, char **argv, char **envp) {
   pthread_t threadOne, threadTwo, threadThree;
   pthread_attr_t attr;
@@ -220,19 +221,22 @@ int main(int argc, char **argv, char **envp) {
   pthread_attr_setschedparam(&attr, &param);
   pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
   pthread_create(&threadOne, &attr, worker_thread, "ONE (HIGH PRIORITY)");
-  pthread_join(threadOne, NULL);
 
   param.sched_priority = 30;
   pthread_attr_setschedparam(&attr, &param);
   pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
   pthread_create(&threadTwo, &attr, worker_thread, "TWO (MEDIUM PRIORITY)");
-  pthread_join(threadTwo, NULL);
 
   param.sched_priority = 20;
   pthread_attr_setschedparam(&attr, &param);
   pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
   pthread_create(&threadThree, &attr, worker_thread, "THREE (LOW PRIORITY)");
+
+  pthread_join(threadOne, NULL);
+  pthread_join(threadTwo, NULL);
   pthread_join(threadThree, NULL);
 
   return 0;
 }
+//
+// 1.8
